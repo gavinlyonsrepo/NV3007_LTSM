@@ -1,0 +1,20 @@
+check reset delays
+check sleep delay
+check register setting
+comments in init
+waht is GOA, VST, FSM VEND?
+get claude to check init
+implement horizontal scrollong
+
+manual check init 
+add more exmaples
+check vertcial scrolling
+chekc horizontal scrolling
+
+finish readme
+mkae github
+push to git 
+make release 
+push to arduino
+update [URL github link.](https://github.com/gavinlyonsrepo/display16_LTSM)
+update website
