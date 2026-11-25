@@ -14,9 +14,6 @@
 /*!
 	@name Panel selection
 	@brief Define exactly ONE panel type, the init sequence for that panel only is compiled.
-	@note The define must be set here, in this header. A define in the sketch is not
-		seen by NV3007_LTSM.cpp, which the Arduino IDE compiles separately.
-	@{
 */
 #define NV3007_PANEL_165  /**< buydisplay 1.65 inch 142x428, TFTM1.65-2 */
 //#define NV3007_PANEL_279  /**< buydisplay 2.79 inch 142x428, TFTM2.79-2 */
