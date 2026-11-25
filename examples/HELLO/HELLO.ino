@@ -3,6 +3,9 @@
 	@author  Gavin Lyons
 	@brief   Example ino file for nv3007 driver. Test Hello World
 	@details Setup for 142x428 display. 0 degrees rotation.
+			By default set for 1.65 inch display, if user has
+			2.79 inch display select it in NV3007_LTSM.hpp 
+			panel selection section.
 	@note    See USER OPTIONS in setup function
 	@test
 		-# Test 101 Print out Hello world

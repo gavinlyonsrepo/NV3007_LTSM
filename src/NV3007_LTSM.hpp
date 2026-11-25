@@ -11,6 +11,23 @@
 // Section Libraries
 #include "display16_graphics_LTSM.hpp"
 
+/*!
+	@name Panel selection
+	@brief Define exactly ONE panel type, the init sequence for that panel only is compiled.
+	@note The define must be set here, in this header. A define in the sketch is not
+		seen by NV3007_LTSM.cpp, which the Arduino IDE compiles separately.
+	@{
+*/
+#define NV3007_PANEL_165  /**< buydisplay 1.65 inch 142x428, TFTM1.65-2 */
+//#define NV3007_PANEL_279  /**< buydisplay 2.79 inch 142x428, TFTM2.79-2 */
+/*! @} */
+
+#if defined(NV3007_PANEL_165) && defined(NV3007_PANEL_279)
+	#error "NV3007_LTSM: more than one panel selected, define only one panel in NV3007_LTSM.hpp"
+#elif !defined(NV3007_PANEL_165) && !defined(NV3007_PANEL_279)
+	#error "NV3007_LTSM: no panel selected, define one panel in NV3007_LTSM.hpp"
+#endif
+
 /*! @brief Class to control NV3007 TFT basic functionality. */
 class NV3007_LTSM : public display16_graphics_LTSM
 {
@@ -230,7 +247,7 @@ private:
 	// static constexpr uint8_t NV3007_VSTCTRL2     = 0xA2; /**< GOA VST control 2 */
 	// static constexpr uint8_t NV3007_VSTCTRL3     = 0xA3; /**< GOA VST control 3 */
 	// static constexpr uint8_t NV3007_VSTCTRL4     = 0xA4; /**< GOA VST control 4 */
-	// static constexpr uint8_t NV3007_VSTCTRL5     = 0xA5; /**< GOA VST control 5 */
+	static constexpr uint8_t NV3007_VSTCTRL5     = 0xA5; /**< GOA VST control 5 */
 	// static constexpr uint8_t NV3007_VSTCTRL6     = 0xA6; /**< GOA VST control 6 */
 	// static constexpr uint8_t NV3007_VSTCTRL7     = 0xA7; /**< GOA VST control 7 */
 	static constexpr uint8_t NV3007_VSTCTRL8     = 0xA8; /**< GOA VST control 8 */
@@ -239,12 +256,12 @@ private:
 
 	// Private: GOA VEND
 	static constexpr uint8_t NV3007_VENDCTRL1    = 0xAB; /**< GOA VEND control 1 */
-	// static constexpr uint8_t NV3007_VENDCTRL2    = 0xAC; /**< GOA VEND control 2 */
-	// static constexpr uint8_t NV3007_VENDCTRL3    = 0xAD; /**< GOA VEND control 3 */
-	// static constexpr uint8_t NV3007_VENDCTRL4    = 0xAE; /**< GOA VEND control 4 */
+	static constexpr uint8_t NV3007_VENDCTRL2    = 0xAC; /**< GOA VEND control 2 */
+	static constexpr uint8_t NV3007_VENDCTRL3    = 0xAD; /**< GOA VEND control 3 */
+	static constexpr uint8_t NV3007_VENDCTRL4    = 0xAE; /**< GOA VEND control 4 */
 	// static constexpr uint8_t NV3007_VENDCTRL5    = 0xAF; /**< GOA VEND control 5 */
 	static constexpr uint8_t NV3007_VENDCTRL6    = 0xB0; /**< GOA VEND control 6 */
-	// static constexpr uint8_t NV3007_VENDCTRL9    = 0xB3; /**< GOA VEND control 9 */
+	static constexpr uint8_t NV3007_VENDCTRL9    = 0xB3; /**< GOA VEND control 9 */
 	// static constexpr uint8_t NV3007_VENDCTRL10   = 0xB4; /**< GOA VEND control 10 */
 	// static constexpr uint8_t NV3007_VENDCTRL11   = 0xB5; /**< GOA VEND control 11 */
 	static constexpr uint8_t NV3007_VENDCTRL12   = 0xB6; /**< GOA VEND control 12 */
@@ -268,12 +285,12 @@ private:
 	// static constexpr uint8_t NV3007_CLKCTRL14    = 0xC6; /**< GOA CLK control 14 */
 	// static constexpr uint8_t NV3007_CLKCTRL15    = 0xC7; /**< GOA CLK control 15 */
 	static constexpr uint8_t NV3007_CLKCTRL16    = 0xC8; /**< GOA CLK control 16 */
-	// static constexpr uint8_t NV3007_CLKCTRL17    = 0xC9; /**< GOA CLK control 17 */
+	static constexpr uint8_t NV3007_CLKCTRL17    = 0xC9; /**< GOA CLK control 17 */
 	// static constexpr uint8_t NV3007_CLKCTRL18    = 0xCA; /**< GOA CLK control 18 */
 	// static constexpr uint8_t NV3007_CLKCTRL19    = 0xCB; /**< GOA CLK control 19 */
 	// static constexpr uint8_t NV3007_CLKCTRL20    = 0xCC; /**< GOA CLK control 20 */
 	static constexpr uint8_t NV3007_CLKCTRL21    = 0xCD; /**< GOA CLK control 21 */
-	// static constexpr uint8_t NV3007_CLKCTRL22    = 0xCE; /**< GOA CLK control 22 */
+	static constexpr uint8_t NV3007_CLKCTRL22    = 0xCE; /**< GOA CLK control 22 */
 	// static constexpr uint8_t NV3007_CLKCTRL23    = 0xCF; /**< GOA CLK control 23 */
 	// static constexpr uint8_t NV3007_CLKCTRL24    = 0xD0; /**< GOA CLK control 24 */
 	// static constexpr uint8_t NV3007_CLKCTRL25    = 0xD1; /**< GOA CLK control 25 */
@@ -303,8 +320,8 @@ private:
 	// static constexpr uint8_t NV3007_SOUCTRL7     = 0xE6; /**< Source control 7 */
 	// static constexpr uint8_t NV3007_SOUCTRL8     = 0xE7; /**< Source control 8 */
 	// static constexpr uint8_t NV3007_SOUCTRL9     = 0xE8; /**< Source control 9 */
-	// static constexpr uint8_t NV3007_SOUCTRL10    = 0xE9; /**< Source control 10 */
-	// static constexpr uint8_t NV3007_SOUCTRL11    = 0xEA; /**< Source control 11 */
+	static constexpr uint8_t NV3007_SOUCTRL10    = 0xE9; /**< Source control 10 */
+	static constexpr uint8_t NV3007_SOUCTRL11    = 0xEA; /**< Source control 11 */
 	// static constexpr uint8_t NV3007_SOUCTRL12    = 0xEB; /**< Source control 12 */
 	static constexpr uint8_t NV3007_SOUCTRL13    = 0xEC; /**< Source control 13 */
 	// static constexpr uint8_t NV3007_SOUCTRL14    = 0xED; /**< Source control 14 */

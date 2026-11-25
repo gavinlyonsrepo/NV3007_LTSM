@@ -133,36 +133,41 @@ void NV3007_LTSM ::TFTchangeInvertMode(bool invert) {
 		Degrees_0, Degrees_90, Degrees_180, Degrees_270
 	@note Uses MX/MY/MV only, the refresh-direction bits (ML, MH) are left clear.
 		Datasheet 6.2.20. Memory access control(36h)
+	@note Offsets: MX always mirrors the GRAM column axis (RAM_WIDTH) and MY the
+		GRAM row axis (RAM_HEIGHT), with or without MV (datasheet section 5.2 figure).
+		The offset for an axis is the portrait offset when that axis is not
+		mirrored, and the RAM size minus panel size minus offset when it is mirrored.
+		With MV set, X addresses the row axis and Y the column axis.
 */
 void NV3007_LTSM::TFTsetRotation(display_rotate_e mode) {
 	uint8_t madctl = _colorOrder; // RGB or BGR colour order bit
 	switch (mode) {
-		case Degrees_0 :
+		case Degrees_0 :  // no mirror
 			_width =_widthStartTFT;
 			_height = _heightStartTFT;
 			_XStart = _colOffset;
 			_YStart = _rowOffset;
 			break;
-		case Degrees_90:
+		case Degrees_90:  // MX mirrors columns, MV exchange: Y = column axis, X = row axis
 			madctl |= (MADCTL_FLAGS_t::MX | MADCTL_FLAGS_t::MV);
 			_width  = _heightStartTFT;
 			_height = _widthStartTFT;
 			_XStart = _rowOffset;
-			_YStart = _colOffset;
+			_YStart = RAM_WIDTH_NV3007 - _widthStartTFT - _colOffset;
 			break;
-		case Degrees_180:
+		case Degrees_180: // MX mirrors columns, MY mirrors rows
 			madctl |= (MADCTL_FLAGS_t::MY | MADCTL_FLAGS_t::MX);
 			_width  = _widthStartTFT;
 			_height = _heightStartTFT;
 			_XStart = RAM_WIDTH_NV3007  - _widthStartTFT  - _colOffset;
 			_YStart = RAM_HEIGHT_NV3007 - _heightStartTFT - _rowOffset;
 			break;
-		case Degrees_270:
+		case Degrees_270: // MY mirrors rows, MV exchange: Y = column axis (not mirrored), X = row axis (mirrored)
 			madctl |= (MADCTL_FLAGS_t::MY | MADCTL_FLAGS_t::MV);
 			_width  = _heightStartTFT;
 			_height = _widthStartTFT;
 			_XStart = RAM_HEIGHT_NV3007 - _heightStartTFT - _rowOffset;
-			_YStart = RAM_WIDTH_NV3007  - _widthStartTFT  - _colOffset;
+			_YStart = _colOffset;
 			break;
 	}
 	writeCommand(NV3007_MADCTL);
@@ -452,6 +457,7 @@ void NV3007_LTSM::writeRegister(uint8_t reg, uint8_t value)
 */
 void NV3007_LTSM::TFTInitSequence(void)
 {
+#if defined(NV3007_PANEL_165)
 	// === Private register enable ===
 	writeRegister(NV3007_CMDEN, NV3007_CMDEN_UNLOCK);
 	// === pump control ===
@@ -515,6 +521,46 @@ void NV3007_LTSM::TFTInitSequence(void)
 	writeRegister(NV3007_TECTRL3, 0x10);
 	// === Private register enable lock ===
 	writeRegister(NV3007_CMDEN, NV3007_CMDEN_LOCK);
+#elif defined(NV3007_PANEL_279)
+	// === Private register enable ===
+	writeRegister(NV3007_CMDEN, NV3007_CMDEN_UNLOCK);
+	// === pump control ===
+	writeRegisterRun(NV3007_PWRCTRL12, (const uint8_t[]){0x08, 0x08, 0xB0, 0x16, 0xC4}, 5);
+	writeRegisterBlock(NV3007_PWRCTRL1, (const uint8_t[]){0x55, 0x04}, 2);
+	// === gamma control + gamma LDO ===
+	writeGammaControl();
+	// === panel registers (GOA, source, timing, TE) ===
+	writeRegister(0x50, 0x00);  // Undocumented in datasheet, vendor value
+	writeRegister(0x52, 0xD6);  // Undocumented in datasheet, vendor value
+	writeRegisterRun(NV3007_ITCTRL1, (const uint8_t[]){0x08, 0x08, 0x1E, 0x1C}, 4);
+	writeRegisterBlock(NV3007_GOACTRL, (const uint8_t[]){0x2B, 0x24, 0x00}, 3);
+	writeRegisterRun(NV3007_VSTCTRL1, (const uint8_t[]){0x87, 0x86}, 2);
+	writeRegisterRun(NV3007_VSTCTRL5, (const uint8_t[]){0x00, 0x00, 0x00, 0x36, 0x7E, 0x7E}, 6);
+	writeRegisterRun(NV3007_CLKCTRL1, (const uint8_t[]){0x85, 0x84, 0x83, 0x82, 0x81, 0x80, 0x01, 0x02, 0x00, 0x00, 0x00, 0x33, 0x7E, 0x7E}, 14);
+	writeRegisterBlock(NV3007_CLKCTRL16, (const uint8_t[]){0x33, 0x33}, 2);
+	writeRegisterRun(NV3007_CLKCTRL17, (const uint8_t[]){0x68, 0x69, 0x6A, 0x6B}, 4);
+	writeRegisterBlock(NV3007_CLKCTRL21, (const uint8_t[]){0x33, 0x33}, 2);
+	writeRegisterRun(NV3007_CLKCTRL22, (const uint8_t[]){0x6C, 0x6D, 0x6E, 0x6F}, 4);
+	writeRegisterBlock(NV3007_VENDCTRL1, (const uint8_t[]){0x03, 0x67}, 2);
+	writeRegisterBlock(NV3007_VENDCTRL2, (const uint8_t[]){0x03, 0x6B}, 2);
+	writeRegisterBlock(NV3007_VENDCTRL3, (const uint8_t[]){0x03, 0x68}, 2);
+	writeRegisterBlock(NV3007_VENDCTRL4, (const uint8_t[]){0x03, 0x6C}, 2);
+	writeRegisterRun(NV3007_VENDCTRL9, (const uint8_t[]){0x00, 0x00, 0x00, 0x32, 0x7E, 0x7E}, 6);
+	writeRegister(NV3007_SOUCTRL1, 0x00);
+	writeRegisterBlock(NV3007_SOUCTRL2, (const uint8_t[]){0x03, 0x0F}, 2);
+	writeRegisterRun(NV3007_SOUCTRL3, (const uint8_t[]){0x04, 0x01, 0x0E, 0x01, 0x19, 0x10, 0x10}, 7);
+	writeRegisterRun(NV3007_SOUCTRL11, (const uint8_t[]){0x12, 0xD0, 0x04, 0x07, 0x07, 0x09, 0xD0, 0x0E}, 8);
+	writeRegister(NV3007_FSMCTRL, 0x17);
+	writeRegisterBlock(NV3007_SOUCTRL19, (const uint8_t[]){0x2C, 0x1B, 0x0B, 0x20}, 4);
+	writeRegister(NV3007_SOUCTRL10, 0x29);
+	writeRegister(NV3007_SOUCTRL13, 0x04);
+	// === Tearing Effect ===
+	writeRegister(NV3007_TEON, 0x00);
+	writeRegisterBlock(NV3007_TECTRL1, (const uint8_t[]){0x00, 0x10}, 2);
+	writeRegister(NV3007_TECTRL3, 0x10);
+	// === Private register enable lock ===
+	writeRegister(NV3007_CMDEN, NV3007_CMDEN_LOCK);
+#endif
 
 	// === Public registers ===
 	writeRegister(NV3007_COLMOD, 0x05);
@@ -533,6 +579,7 @@ void NV3007_LTSM::TFTInitSequence(void)
 */
 void NV3007_LTSM::writeGammaControl(void)
 {
+#if defined(NV3007_PANEL_165)
 	writeCommand(NV3007_GLDOCTRL2);
 	writeData(0x90);
 	writeCommand(NV3007_GLDOCTRL1);
@@ -604,5 +651,42 @@ void NV3007_LTSM::writeGammaControl(void)
 	writeData(0x00);
 	writeCommand(NV3007_GAMCTRL32);
 	writeData(0x00);
+#elif defined(NV3007_PANEL_279)
+	writeRegister(NV3007_GLDOCTRL2, 0x90);
+	writeRegister(NV3007_GLDOCTRL1, 0x7B);
+	writeRegister(NV3007_GLDOCTRL3, 0x33);
+	writeRegister(NV3007_GAMCTRL1, 0x00);
+	writeRegister(NV3007_GAMCTRL17, 0x00);
+	writeRegister(NV3007_GAMCTRL2, 0x02);
+	writeRegister(NV3007_GAMCTRL18, 0x02);
+	writeRegister(NV3007_GAMCTRL3, 0x04);
+	writeRegister(NV3007_GAMCTRL19, 0x04);
+	writeRegister(NV3007_GAMCTRL13, 0x29);
+	writeRegister(NV3007_GAMCTRL29, 0x29);
+	writeRegister(NV3007_GAMCTRL14, 0x31);
+	writeRegister(NV3007_GAMCTRL30, 0x31);
+	writeRegister(NV3007_GAMCTRL15, 0x0F);
+	writeRegister(NV3007_GAMCTRL31, 0x0F);
+	writeRegister(NV3007_GAMCTRL7, 0x21);
+	writeRegister(NV3007_GAMCTRL23, 0x21);
+	writeRegister(NV3007_GAMCTRL9, 0x3A);
+	writeRegister(NV3007_GAMCTRL25, 0x3A);
+	writeRegister(NV3007_GAMCTRL4, 0x07);
+	writeRegister(NV3007_GAMCTRL20, 0x07);
+	writeRegister(NV3007_GAMCTRL5, 0x05);
+	writeRegister(NV3007_GAMCTRL21, 0x05);
+	writeRegister(NV3007_GAMCTRL6, 0x02);
+	writeRegister(NV3007_GAMCTRL22, 0x02);
+	writeRegister(NV3007_GAMCTRL8, 0x23);
+	writeRegister(NV3007_GAMCTRL24, 0x23);
+	writeRegister(NV3007_GAMCTRL10, 0x08);
+	writeRegister(NV3007_GAMCTRL26, 0x08);
+	writeRegister(NV3007_GAMCTRL11, 0x13);
+	writeRegister(NV3007_GAMCTRL27, 0x13);
+	writeRegister(NV3007_GAMCTRL12, 0x13);
+	writeRegister(NV3007_GAMCTRL28, 0x13);
+	writeRegister(NV3007_GAMCTRL16, 0x00);
+	writeRegister(NV3007_GAMCTRL32, 0x00);
+#endif
 }
 // === EOF ===
